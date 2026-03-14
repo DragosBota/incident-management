@@ -21,9 +21,7 @@ class AuthService {
     );
   }
 
-  // Attempts to register a new user using email and password.
-  // This creates the authentication account in Supabase Auth.
-  // Additional user profile data will be stored separatelyin the `profiles` table in a later step.
+
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -34,7 +32,34 @@ class AuthService {
     );
   }
 
-  // Signs out the currently authenticated user.
+  Future<void> createProfile({
+    required String userId,
+    required String firstName,
+    required String lastName,
+    required String departmentId,
+  }) async {
+    try {
+      await _client.from('profiles').insert({
+        'id': userId,
+        'first_name': firstName,
+        'last_name': lastName,
+        'department_id': departmentId,
+      });
+    } catch (e) {
+      throw Exception('Error creating profile: $e');
+    }
+  }
+
+  // Fetches the list of departments from the database.
+  Future<List<Map<String, dynamic>>> fetchDepartments() async {
+    final response = await _client
+      .from('departments')
+      .select('id, name')
+      .order('name');
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// Signs out the currently authenticated user.
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

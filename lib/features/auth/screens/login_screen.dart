@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:incident_management/features/auth/servicies/auth_servicies.dart';
 import 'package:incident_management/features/auth/screens/incident_home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -48,6 +48,8 @@ class _LoginScreenState extends State<LoginScreen> {
             _buildPasswordField(),
             const SizedBox(height: 32),
             _buildLoginButton(),
+            const SizedBox(height: 12),
+            _buildRegisterLink(),
           ],
         ),
       ),
@@ -98,6 +100,21 @@ class _LoginScreenState extends State<LoginScreen> {
       child: const Text('Login'),
     );
   }
+
+  // Builds the registration button
+  Widget _buildRegisterLink() {
+  return TextButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const RegisterScreen(),
+        ),
+      );
+    },
+    child: const Text('Create an account'),
+  );
+}
 
   // Handles the login action.
   Future<void> _handleLogin() async {
