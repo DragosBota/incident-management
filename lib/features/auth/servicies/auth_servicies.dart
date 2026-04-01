@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/services/supabase_service.dart';
+import '../models/profile.dart';
 
 
 class AuthService {
@@ -59,7 +60,17 @@ class AuthService {
     return List<Map<String, dynamic>>.from(response);
   }
 
-  /// Signs out the currently authenticated user.
+  Future<Profile> fetchProfile(String userId) async {
+  final response = await _client
+      .from('profiles')
+      .select()
+      .eq('id', userId)
+      .single();
+
+  return Profile.fromMap(response);
+}
+
+  // Signs out the currently authenticated user.
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

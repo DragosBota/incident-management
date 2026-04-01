@@ -118,27 +118,53 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // Handles the login action.
   Future<void> _handleLogin() async {
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final password = _passwordController.text.trim();
 
     try {
-      await _authService.signIn(
+      debugPrint('STEP 1 - Starting login');
+
+      final response = await _authService.signIn(
         email: email,
         password: password,
       );
+
+      final user = response.user;
+
+      if (user == null) {
+        throw Exception('Login failed: user not found');
+      }
+
+      debugPrint('STEP 2 - User authenticated: ${user.id}');
+      debugPrint('STEP 3 - Fetching profile');
+
+      final profile = await _authService.fetchProfile(user.id);
+
+      debugPrint('STEP 4 - Profile loaded');
+      debugPrint('Profile ID: ${profile.id}');
+      debugPrint('First name: ${profile.firstName}');
+      debugPrint('Last name: ${profile.lastName}');
+      debugPrint('Department ID: ${profile.departmentId}');
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Login successful'),
         ),
       );
+
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const IncidentsHomeScreen()
+        MaterialPageRoute(
+          builder: (context) => const IncidentsHomeScreen(),
         ),
       );
     } catch (error) {
+      debugPrint('Login error: $error');
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Login failed: $error'),
