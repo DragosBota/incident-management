@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:incident_management/features/auth/servicies/auth_servicies.dart';
-import 'package:incident_management/features/auth/screens/incident_home_screen.dart';
+import 'package:incident_management/features/incidents/screens/incident_home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -76,7 +76,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField() {
     return TextFormField(
       controller: _passwordController,
-      obscureText: true,
       decoration: const InputDecoration(
         labelText: 'Password',
       ),
@@ -122,8 +121,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     try {
-      debugPrint('STEP 1 - Starting login');
-
       final response = await _authService.signIn(
         email: email,
         password: password,
@@ -134,17 +131,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user == null) {
         throw Exception('Login failed: user not found');
       }
-
-      debugPrint('STEP 2 - User authenticated: ${user.id}');
-      debugPrint('STEP 3 - Fetching profile');
-
-      final profile = await _authService.fetchProfile(user.id);
-
-      debugPrint('STEP 4 - Profile loaded');
-      debugPrint('Profile ID: ${profile.id}');
-      debugPrint('First name: ${profile.firstName}');
-      debugPrint('Last name: ${profile.lastName}');
-      debugPrint('Department ID: ${profile.departmentId}');
 
       if (!mounted) return;
 
@@ -161,7 +147,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (error) {
-      debugPrint('Login error: $error');
 
       if (!mounted) return;
 

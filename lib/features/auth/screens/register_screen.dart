@@ -240,23 +240,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   });
 
   try {
-debugPrint('STEP 1 - Starting sign up'); //DEBUG!!!!!!!!!
 
     final response = await _authService.signUp(
       email: email,
       password: password,
     );
 
-debugPrint('STEP 2 - Sign up completed for $email');//DEBUG!!!!!!!!!
-
     final user = response.user;
 
     if (user == null) {
       throw Exception('User creation failed');
     }
-
-debugPrint('STEP 3 - User ID obtained: ${user.id}');//DEBUG!!!!!!!!!
-debugPrint('STEP 4 - Creating profile');//DEBUG!!!!!!!!!
 
     await _authService.createProfile(
       userId: user.id,
@@ -265,18 +259,17 @@ debugPrint('STEP 4 - Creating profile');//DEBUG!!!!!!!!!
       departmentId: departmentId,
     );
 
-debugPrint('STEP 5 - Profile created');//DEBUG!!!!!!!!!
-      if (!mounted) return;
+    if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration successful'),
-        ),
-      );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Registration successful'),
+      ),
+    );
 
-      Navigator.pop(context);
+    Navigator.pop(context);
     } catch (error) {
-debugPrint('Registration error: $error');//DEBUG!!!!!!!!!
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -285,11 +278,11 @@ debugPrint('Registration error: $error');//DEBUG!!!!!!!!!
         ),
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted){
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 }
