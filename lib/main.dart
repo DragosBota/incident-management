@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
 import 'core/config/supabase_config.dart';
+import 'shared/services/connectivity_service.dart';
 
 
 Future<void> main() async {
@@ -19,6 +20,10 @@ Future<void> main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
+
+  // Starts connectivity monitoring to retry pending sync when the network
+  // becomes available again.
+  await ConnectivityService.instance.initialize();
 
   // Launches the root application widget.
   runApp(const IncidentManagementApp());

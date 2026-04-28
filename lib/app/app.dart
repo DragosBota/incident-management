@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../features/auth/screens/login_screen.dart';
 
-
 class IncidentManagementApp extends StatelessWidget {
   const IncidentManagementApp({super.key});
 
@@ -18,26 +17,6 @@ class IncidentManagementApp extends StatelessWidget {
 
       // First screen displayed when the application starts.
       home: const LoginScreen(),
-    );
-  }
-}
-
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Incident Management'),
-      ),
-      body: const Center(
-        child: Text(
-          'Incident Management - Base Project',
-          style: TextStyle(fontSize: 20),
-        ),
-      ),
     );
   }
 }

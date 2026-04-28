@@ -1,9 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/services/supabase_service.dart';
+import '../../../shared/services/auth_cache_service.dart';
 import '../models/profile.dart';
 
 class AuthService {
   final SupabaseClient _client = SupabaseService.client;
+  final AuthCacheService _authCacheService = AuthCacheService.instance;
 
   User? get currentUser => _client.auth.currentUser;
 
@@ -46,22 +48,46 @@ class AuthService {
   }
 
   Future<List<Map<String, dynamic>>> fetchDepartments() async {
-    final response = await _client
-        .from('departments')
-        .select('id, name')
-        .order('name');
+    try {
+      final response = await _client
+          .from('departments')
+          .select('id, name')
+          .order('name');
 
-    return List<Map<String, dynamic>>.from(response);
+      final departments = List<Map<String, dynamic>>.from(response);
+      await _authCacheService.cacheDepartments(departments);
+      return departments;
+    } catch (_) {
+      final cachedDepartments = await _authCacheService.getCachedDepartments();
+
+      if (cachedDepartments.isNotEmpty) {
+        return cachedDepartments;
+      }
+
+      rethrow;
+    }
   }
 
   Future<Profile> fetchProfile(String userId) async {
-    final response = await _client
-        .from('profiles')
-        .select()
-        .eq('id', userId)
-        .single();
+    try {
+      final response = await _client
+          .from('profiles')
+          .select()
+          .eq('id', userId)
+          .single();
 
-    return Profile.fromMap(response);
+      final profile = Profile.fromMap(response);
+      await _authCacheService.cacheProfile(profile);
+      return profile;
+    } catch (_) {
+      final cachedProfile = await _authCacheService.getCachedProfile();
+
+      if (cachedProfile != null && cachedProfile.id == userId) {
+        return cachedProfile;
+      }
+
+      rethrow;
+    }
   }
 
   Future<String?> fetchDepartmentIdByName(String departmentName) async {
@@ -90,17 +116,27 @@ class AuthService {
 
     if (user == null) return null;
 
-    final profile = await fetchProfile(user.id);
+    try {
+      final profile = await fetchProfile(user.id);
 
-    final response = await _client
-        .from('departments')
-        .select('name')
-        .eq('id', profile.departmentId)
-        .maybeSingle();
+      final response = await _client
+          .from('departments')
+          .select('name')
+          .eq('id', profile.departmentId)
+          .maybeSingle();
 
-    if (response == null) return null;
+      if (response == null) return null;
 
-    return response['name'] as String?;
+      final departmentName = response['name'] as String?;
+
+      if (departmentName != null) {
+        await _authCacheService.cacheDepartmentName(departmentName);
+      }
+
+      return departmentName;
+    } catch (_) {
+      return await _authCacheService.getCachedDepartmentName();
+    }
   }
 
   Future<bool> isCurrentUserFromDepartment(String departmentName) async {
@@ -114,7 +150,18 @@ class AuthService {
     return currentDepartmentId == targetDepartmentId;
   }
 
+  Future<void> primeCurrentUserCache() async {
+    final user = currentUser;
+
+    if (user == null) return;
+
+    await fetchDepartments();
+    await fetchProfile(user.id);
+    await fetchCurrentUserDepartmentName();
+  }
+
   Future<void> signOut() async {
     await _client.auth.signOut();
+    await _authCacheService.clear();
   }
 }

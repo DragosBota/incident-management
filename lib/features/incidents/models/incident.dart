@@ -54,4 +54,67 @@ class Incident {
       deletedBy: map['deleted_by'] as String?,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'incident_code': incidentCode,
+      'customer_name': customerName,
+      'sap_order': sapOrder,
+      'description': description,
+      'status': status,
+      'department_at': departmentAt,
+      'resolution_type': resolutionType,
+      'created_by': createdBy,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'sync_status': syncStatus,
+      'deleted_at': deletedAt?.toIso8601String(),
+      'deleted_reason': deletedReason,
+      'deleted_by': deletedBy,
+    };
+  }
+
+  Incident copyWith({
+    String? id,
+    String? incidentCode,
+    String? customerName,
+    String? sapOrder,
+    String? description,
+    String? status,
+    String? departmentAt,
+    Object? resolutionType = _unset,
+    String? createdBy,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? syncStatus,
+    Object? deletedAt = _unset,
+    Object? deletedReason = _unset,
+    Object? deletedBy = _unset,
+  }) {
+    return Incident(
+      id: id ?? this.id,
+      incidentCode: incidentCode ?? this.incidentCode,
+      customerName: customerName ?? this.customerName,
+      sapOrder: sapOrder ?? this.sapOrder,
+      description: description ?? this.description,
+      status: status ?? this.status,
+      departmentAt: departmentAt ?? this.departmentAt,
+      resolutionType: resolutionType == _unset
+          ? this.resolutionType
+          : resolutionType as String?,
+      createdBy: createdBy ?? this.createdBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+      deletedAt: deletedAt == _unset ? this.deletedAt : deletedAt as DateTime?,
+      deletedReason: deletedReason == _unset
+          ? this.deletedReason
+          : deletedReason as String?,
+      deletedBy:
+          deletedBy == _unset ? this.deletedBy : deletedBy as String?,
+    );
+  }
+
+  static const Object _unset = Object();
 }

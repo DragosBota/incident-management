@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../auth/models/profile.dart';
-import '../../auth/servicies/auth_servicies.dart';
+import '../../auth/services/auth_service.dart';
 import '../models/incident.dart';
 import '../models/incident_log.dart';
 import '../models/incident_status.dart';
-import '../servicies/incident_service.dart';
+import '../services/incident_service.dart';
 import 'edit_incident_screen.dart';
 
 class IncidentDetailScreen extends StatefulWidget {
@@ -21,6 +21,7 @@ class IncidentDetailScreen extends StatefulWidget {
 
 class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   static const String commercialDepartmentName = 'Commercial';
+  static const String qualityDepartmentName = 'Quality';
 
   final IncidentService _incidentService = IncidentService();
   final AuthService _authService = AuthService();
@@ -36,6 +37,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
 
   String? _selectedStatus;
   String? _selectedDepartmentId;
+  String? _currentDepartmentName;
 
   @override
   void initState() {
@@ -53,17 +55,28 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
           await _incidentService.fetchIncidentById(widget.incidentId);
       final logs = await _incidentService.fetchIncidentLogs(widget.incidentId);
       final departments = await _authService.fetchDepartments();
-      final canManageIncident = await _checkCommercialPermission(departments);
+      final currentDepartmentName =
+          await _fetchCurrentDepartmentName(departments);
+      final canManageIncident =
+          currentDepartmentName == commercialDepartmentName;
 
       if (!mounted) return;
+
+      final selectedStatus = _isStatusAllowedForDepartment(
+        incident.status,
+        currentDepartmentName,
+      )
+          ? incident.status
+          : null;
 
       setState(() {
         _incident = incident;
         _logs = logs;
         _departments = departments;
-        _selectedStatus = incident.status;
+        _selectedStatus = selectedStatus;
         _selectedDepartmentId = incident.departmentAt;
         _canManageIncident = canManageIncident;
+        _currentDepartmentName = currentDepartmentName;
       });
     } catch (error) {
       if (!mounted) return;
@@ -82,12 +95,12 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
     }
   }
 
-  Future<bool> _checkCommercialPermission(
+  Future<String?> _fetchCurrentDepartmentName(
     List<Map<String, dynamic>> departments,
   ) async {
     final currentUser = _authService.currentUser;
 
-    if (currentUser == null) return false;
+    if (currentUser == null) return null;
 
     final Profile profile = await _authService.fetchProfile(currentUser.id);
 
@@ -96,9 +109,49 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
       orElse: () => <String, dynamic>{},
     );
 
-    final departmentName = department['name'] as String?;
+    return department['name'] as String?;
+  }
 
-    return departmentName == commercialDepartmentName;
+  bool get _isCommercial => _currentDepartmentName == commercialDepartmentName;
+
+  bool get _isQuality => _currentDepartmentName == qualityDepartmentName;
+
+  bool _isStatusAllowedForDepartment(String status, String? departmentName) {
+    if (status == IncidentStatus.registered) {
+      return false;
+    }
+
+    if (status == IncidentStatus.inReview) {
+      return departmentName == qualityDepartmentName;
+    }
+
+    if (status == IncidentStatus.closed) {
+      return departmentName == commercialDepartmentName;
+    }
+
+    return true;
+  }
+
+  List<String> get _allowedStatuses {
+    return IncidentStatus.values.where((status) {
+      return _isStatusAllowedForDepartment(status, _currentDepartmentName);
+    }).toList();
+  }
+
+  String? _validateStatusPermission(String status) {
+    if (status == IncidentStatus.registered) {
+      return 'REGISTERED is assigned automatically when creating an incident';
+    }
+
+    if (status == IncidentStatus.inReview && !_isQuality) {
+      return 'Only Quality can set status to IN_REVIEW';
+    }
+
+    if (status == IncidentStatus.closed && !_isCommercial) {
+      return 'Only Commercial can close incidents';
+    }
+
+    return null;
   }
 
   Future<void> _openEditScreen() async {
@@ -132,6 +185,17 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a valid status and department'),
+        ),
+      );
+      return;
+    }
+
+    final permissionError = _validateStatusPermission(_selectedStatus!);
+
+    if (permissionError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(permissionError),
         ),
       );
       return;
@@ -293,9 +357,56 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
     return match.first['name'] as String;
   }
 
+  String _getSyncStatusLabel(String syncStatus) {
+    switch (syncStatus) {
+      case 'PENDING_CREATE':
+        return 'Pending create';
+      case 'PENDING_UPDATE':
+        return 'Pending update';
+      case 'PENDING_DELETE':
+        return 'Pending delete';
+      case 'SYNCED':
+        return 'Synced';
+      default:
+        return syncStatus;
+    }
+  }
+
+  Color _getSyncStatusColor(String syncStatus) {
+    switch (syncStatus) {
+      case 'SYNCED':
+        return Colors.green;
+      case 'PENDING_DELETE':
+        return Colors.red;
+      case 'PENDING_CREATE':
+      case 'PENDING_UPDATE':
+        return Colors.orange;
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  Widget _buildSyncStatusChip(String syncStatus) {
+    return Chip(
+      label: Text(
+        _getSyncStatusLabel(syncStatus),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 12,
+        ),
+      ),
+      backgroundColor: _getSyncStatusColor(syncStatus),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+    );
+  }
+
   Widget _buildIncidentInfo(Incident incident) {
     final bool canEdit =
-        _canManageIncident && incident.status != IncidentStatus.closed;
+        _canManageIncident &&
+        incident.status != IncidentStatus.closed &&
+        incident.deletedAt == null;
+    final bool isDeleted = incident.deletedAt != null;
 
     return Card(
       child: Padding(
@@ -311,6 +422,8 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            _buildSyncStatusChip(incident.syncStatus),
+            const SizedBox(height: 12),
             Text('Customer: ${incident.customerName}'),
             Text('SAP Order: ${incident.sapOrder}'),
             Text('Description: ${incident.description}'),
@@ -319,8 +432,13 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
             Text('Created By: ${incident.createdBy}'),
             Text('Created At: ${incident.createdAt.toLocal()}'),
             Text('Updated At: ${incident.updatedAt.toLocal()}'),
-            Text('Sync Status: ${incident.syncStatus}'),
             Text('Resolution Type: ${incident.resolutionType ?? '-'}'),
+            if (isDeleted)
+              Text('Deleted At: ${incident.deletedAt!.toLocal()}'),
+            if (isDeleted)
+              Text('Deleted Reason: ${incident.deletedReason ?? '-'}'),
+            if (isDeleted)
+              Text('Deleted By: ${incident.deletedBy ?? '-'}'),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -330,7 +448,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
                     child: const Text('Edit incident'),
                   ),
                 if (canEdit) const SizedBox(width: 12),
-                if (_canManageIncident)
+                if (_canManageIncident && !isDeleted)
                   ElevatedButton(
                     onPressed: _isDeletingIncident ? null : _handleDeleteIncident,
                     child: Text(
@@ -346,6 +464,15 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   }
 
   Widget _buildStatusUpdateSection() {
+    if (_incident?.deletedAt != null) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('Deleted incidents are read-only.'),
+        ),
+      );
+    }
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -365,7 +492,7 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
               decoration: const InputDecoration(
                 labelText: 'New status',
               ),
-              items: IncidentStatus.values.map((status) {
+              items: _allowedStatuses.map((status) {
                 return DropdownMenuItem<String>(
                   value: status,
                   child: Text(status),

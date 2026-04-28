@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../servicies/auth_servicies.dart';
+import '../services/auth_service.dart';
 
 
 class RegisterScreen extends StatefulWidget {
@@ -34,6 +34,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void initState() {
     super.initState();
     _loadDepartments();
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override

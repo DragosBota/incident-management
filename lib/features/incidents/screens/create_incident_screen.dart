@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../auth/servicies/auth_servicies.dart';
+import '../../auth/services/auth_service.dart';
 import '../../auth/models/profile.dart';
-import '../servicies/incident_service.dart';
+import '../services/incident_service.dart';
 
 class CreateIncidentScreen extends StatefulWidget {
   const CreateIncidentScreen({super.key});

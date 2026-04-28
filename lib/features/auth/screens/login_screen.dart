@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:incident_management/features/auth/servicies/auth_servicies.dart';
 import 'package:incident_management/features/incidents/screens/incident_home_screen.dart';
 import 'register_screen.dart';
+import '../services/auth_service.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -76,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildPasswordField() {
     return TextFormField(
       controller: _passwordController,
+      obscureText: true,
       decoration: const InputDecoration(
         labelText: 'Password',
       ),
@@ -131,6 +133,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user == null) {
         throw Exception('Login failed: user not found');
       }
+
+      await _authService.primeCurrentUserCache();
 
       if (!mounted) return;
 

@@ -19,4 +19,13 @@ class Profile {
       departmentId: map['department_id'] as String,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'first_name': firstName,
+      'last_name': lastName,
+      'department_id': departmentId,
+    };
+  }
 }

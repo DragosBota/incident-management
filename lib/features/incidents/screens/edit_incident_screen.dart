@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../auth/servicies/auth_servicies.dart';
+import '../../auth/services/auth_service.dart';
 import '../models/incident.dart';
-import '../servicies/incident_service.dart';
+import '../services/incident_service.dart';
 
 class EditIncidentScreen extends StatefulWidget {
   final Incident incident;
